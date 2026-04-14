@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Library</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="#browse" class="site-title">My Library</a>
+      <button class="btn btn-scan" id="btn-scan">Scan Book</button>
+    </div>
+  </header>
+
+  <!-- Browse View -->
+  <main id="view-browse">
+    <div class="filters">
+      <input type="text" id="search-input" class="input search-input" placeholder="Search by title, author, or ISBN...">
+      <div class="filter-row">
+        <select id="filter-status" class="input filter-select">
+          <option value="">All Books</option>
+          <option value="Read">Read</option>
+          <option value="To Read">To Read</option>
+        </select>
+        <select id="filter-genre" class="input filter-select">
+          <option value="">All Genres</option>
+        </select>
+        <select id="filter-sort" class="input filter-select">
+          <option value="added">Recently Added</option>
+          <option value="title">Title A-Z</option>
+          <option value="author">Author A-Z</option>
+          <option value="published">Publication Date</option>
+        </select>
+        <span id="book-count" class="book-count"></span>
+      </div>
+    </div>
+
+    <div id="book-grid" class="book-grid"></div>
+  </main>
+
+  <!-- Scan View -->
+  <div id="view-scan" style="display: none">
+    <div class="scan-container">
+      <div class="scan-header">
+        <button class="btn btn-back" id="btn-back-browse">&larr; Back to Library</button>
+        <h2>Scan a Book</h2>
+      </div>
+
+      <div class="scanner-wrapper">
+        <video id="scanner-video" class="scanner-video" playsinline autoplay muted></video>
+        <div class="scanner-overlay">
+          <div class="scanner-guide"></div>
+        </div>
+      </div>
+
+      <p id="scan-status" class="scan-status"></p>
+
+      <div class="manual-entry">
+        <p>Barcode not scanning? Enter ISBN manually:</p>
+        <div class="manual-entry-row">
+          <input type="text" id="manual-isbn-input" class="input" placeholder="Enter ISBN (e.g. 9780140449136)">
+          <button class="btn btn-primary" id="btn-manual-isbn">Look Up</button>
+        </div>
+      </div>
+
+      <div id="scan-result"></div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/sheets.js"></script>
+  <script src="js/bookLookup.js"></script>
+  <script src="js/scanner.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
