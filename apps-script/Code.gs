@@ -1,11 +1,10 @@
 // Google Apps Script — Personal Library Write API
-// Paste this into your Google Sheet's Apps Script editor
+// Create at https://script.google.com → New project → paste this code
 // Then deploy as web app (Execute as: Me, Access: Anyone)
 
-// Set your password: File → Project properties → Script properties
-// Add property: PASSWORD = your_chosen_password
-
-const SHEET_NAME = 'Library';
+// SETUP: Go to Project Settings (gear icon) → Script Properties → Add:
+//   SHEET_ID = your Google Sheet's ID (the long string in the Sheet URL)
+//   PASSWORD = your chosen password
 
 function doPost(e) {
   try {
@@ -17,8 +16,9 @@ function doPost(e) {
       return jsonResponse({ success: false, error: 'Invalid password' }, 403);
     }
 
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(SHEET_NAME) || ss.getSheets()[0];
+    const sheetId = PropertiesService.getScriptProperties().getProperty('SHEET_ID');
+    const ss = SpreadsheetApp.openById(sheetId);
+    const sheet = ss.getSheets()[0];
 
     switch (data.action) {
       case 'add':
