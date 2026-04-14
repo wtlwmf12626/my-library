@@ -3,7 +3,7 @@
 const Sheets = {
   // CONFIG: Set these after deploying your Apps Script
   APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx97WB6put2fHDe2ycLGKStSQKNyjWMl_Js0FMsJo_rDqyGNEpsHyGzLpOPu-EZ071psQ/exec',
-  SHEET_CSV_URL: '',    // Still need: publish Sheet as CSV (File → Share → Publish to web)
+  SHEET_CSV_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRToAA3qOo8JbTQZ-kCO3h9rkvFW-wknFHKctk5Gu_PXPIWLe4AKjweZDJE9_dJMxISGK70nv3HZwZ2/pub?gid=0&single=true&output=csv',
 
   _cache: null,
   _cacheTime: 0,
