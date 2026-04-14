@@ -2,8 +2,8 @@
 
 const Sheets = {
   // CONFIG: Set these after deploying your Apps Script
-  APPS_SCRIPT_URL: '',  // Paste your Apps Script web app URL here
-  SHEET_CSV_URL: '',    // Paste your published Sheet CSV URL here
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx97WB6put2fHDe2ycLGKStSQKNyjWMl_Js0FMsJo_rDqyGNEpsHyGzLpOPu-EZ071psQ/exec',
+  SHEET_CSV_URL: '',    // Still need: publish Sheet as CSV (File → Share → Publish to web)
 
   _cache: null,
   _cacheTime: 0,
