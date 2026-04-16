@@ -1,69 +1,81 @@
-// Barcode Scanner — uses ZXingBrowser for reliable cross-browser ISBN scanning
+// Barcode Scanner — uses html5-qrcode for reliable iOS Safari scanning
 
 const Scanner = {
-  _controls: null,
-  _reader: null,
+  _scanner: null,
   _scanning: false,
 
-  async startScanner(videoElement, onDetected) {
+  async startScanner(containerId, onDetected) {
     this._scanning = true;
 
-    await this._loadZxing();
+    await this._loadLibrary();
+
+    // Clean up any previous scanner instance
+    if (this._scanner) {
+      try { await this._scanner.stop(); } catch {}
+      try { await this._scanner.clear(); } catch {}
+    }
+
+    this._scanner = new Html5Qrcode(containerId);
+
+    const config = {
+      fps: 10,
+      qrbox: { width: 250, height: 150 },
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8
+      ]
+    };
 
     try {
-      // decodeFromVideoDevice(deviceId, videoElement, callback)
-      // null deviceId = default camera (rear on phones)
-      this._controls = await this._reader.decodeFromVideoDevice(
-        null,
-        videoElement,
-        (result, error) => {
+      await this._scanner.start(
+        { facingMode: 'environment' },
+        config,
+        (decodedText) => {
           if (!this._scanning) return;
-
-          if (result) {
-            const isbn = result.getText();
-            if (this._isValidISBN(isbn)) {
-              this._vibrate();
-              this._scanning = false;
-              if (this._controls) {
-                this._controls.stop();
-                this._controls = null;
-              }
-              onDetected(isbn);
-            }
+          if (this._isValidISBN(decodedText)) {
+            this._vibrate();
+            this._scanning = false;
+            this._scanner.pause(true); // pause instead of stop for faster resume
+            onDetected(decodedText);
           }
-          // error is normal when no barcode in frame — just keeps scanning
+        },
+        () => {
+          // No barcode found in this frame — normal, keep scanning
         }
       );
     } catch (err) {
-      console.error('Scanner error:', err);
+      console.error('Scanner start error:', err);
       throw err;
     }
   },
 
-  stopScanner() {
-    this._scanning = false;
-    if (this._controls) {
-      try { this._controls.stop(); } catch {}
-      this._controls = null;
+  async resumeScanner() {
+    if (this._scanner) {
+      this._scanning = true;
+      try {
+        this._scanner.resume();
+      } catch {
+        // If resume fails, the scanner was stopped not paused — restart needed
+      }
     }
   },
 
-  async _loadZxing() {
-    if (this._reader) return;
+  async stopScanner() {
+    this._scanning = false;
+    if (this._scanner) {
+      try { await this._scanner.stop(); } catch {}
+      try { await this._scanner.clear(); } catch {}
+      this._scanner = null;
+    }
+  },
+
+  async _loadLibrary() {
+    if (typeof Html5Qrcode !== 'undefined') return;
 
     return new Promise((resolve, reject) => {
-      if (typeof ZXingBrowser !== 'undefined') {
-        this._reader = new ZXingBrowser.BrowserMultiFormatReader();
-        resolve();
-        return;
-      }
-
       const script = document.createElement('script');
-      script.src = 'lib/zxing-browser.min.js';
-      script.onload = () => {
-        this._reader = new ZXingBrowser.BrowserMultiFormatReader();
-        resolve();
-      };
+      script.src = 'lib/html5-qrcode.min.js';
+      script.onload = resolve;
       script.onerror = () => reject(new Error('Failed to load barcode scanner library'));
       document.head.appendChild(script);
     });

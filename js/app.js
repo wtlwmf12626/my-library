@@ -74,14 +74,13 @@ const App = {
   // -- Scanning --
 
   async _startScanning() {
-    const video = document.getElementById('scanner-video');
     const status = document.getElementById('scan-status');
     status.textContent = 'Point camera at a barcode...';
 
     try {
-      await Scanner.startScanner(video, (isbn) => this._onISBNDetected(isbn));
+      await Scanner.startScanner('scanner-container', (isbn) => this._onISBNDetected(isbn));
     } catch (err) {
-      if (err.name === 'NotAllowedError') {
+      if (err.name === 'NotAllowedError' || (err.message && err.message.includes('Permission'))) {
         status.textContent = 'Camera permission denied. Please allow camera access and try again.';
       } else {
         status.textContent = 'Camera error: ' + err.message;
@@ -90,7 +89,6 @@ const App = {
   },
 
   async _onISBNDetected(isbn) {
-    Scanner.stopScanner();
 
     const status = document.getElementById('scan-status');
     status.textContent = 'Found ISBN: ' + isbn + ' — Looking up book...';
@@ -100,8 +98,7 @@ const App = {
 
       if (!book.title) {
         status.textContent = 'ISBN ' + isbn + ' not found in book databases. Try entering details manually.';
-        // Restart scanner after a pause
-        setTimeout(() => this._startScanning(), 3000);
+        setTimeout(() => Scanner.resumeScanner(), 3000);
         return;
       }
 
@@ -109,7 +106,7 @@ const App = {
       UI.showScanConfirmation(book, (confirmedBook) => this._addBook(confirmedBook));
     } catch (err) {
       status.textContent = 'Lookup error: ' + err.message;
-      setTimeout(() => this._startScanning(), 3000);
+      setTimeout(() => Scanner.resumeScanner(), 3000);
     }
   },
 
@@ -135,8 +132,8 @@ const App = {
       // Refresh book list in background
       this._loadAndRender();
 
-      // Restart scanner for next book
-      this._startScanning();
+      // Resume scanner for next book (faster than full restart)
+      Scanner.resumeScanner();
     } catch (err) {
       if (err.message === 'Invalid password') {
         sessionStorage.removeItem('libraryPassword');
@@ -145,7 +142,7 @@ const App = {
       } else if (err.message === 'Book already exists') {
         UI.showToast('This book is already in your library.', 'error');
         UI.clearScanResult();
-        this._startScanning();
+        Scanner.resumeScanner();
       } else {
         UI.showToast('Error: ' + err.message, 'error');
         status.textContent = '';
