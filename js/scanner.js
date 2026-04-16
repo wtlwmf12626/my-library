@@ -1,40 +1,53 @@
-// Barcode Scanner — native BarcodeDetector API with zxing-js fallback
+// Barcode Scanner — uses zxing-js for reliable cross-browser scanning
+// Native BarcodeDetector API has poor Safari support, so we default to zxing
 
 const Scanner = {
   _stream: null,
-  _detector: null,
   _zxingReader: null,
   _scanning: false,
-  _animFrame: null,
-
-  isNativeSupported() {
-    return 'BarcodeDetector' in window;
-  },
+  _controls: null,
 
   async startScanner(videoElement, onDetected) {
     this._scanning = true;
 
-    // Get camera stream (prefer rear camera for phone scanning)
-    this._stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment' }
-    });
-    videoElement.srcObject = this._stream;
-    await videoElement.play();
+    // Always load zxing — it's the most reliable cross-browser approach
+    await this._loadZxing();
 
-    if (this.isNativeSupported()) {
-      this._detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8'] });
-      this._scanWithNative(videoElement, onDetected);
-    } else {
-      await this._loadZxing();
-      this._scanWithZxing(videoElement, onDetected);
+    // Use zxing's built-in continuous decode from video
+    // It handles camera access, frame capture, and barcode detection internally
+    try {
+      this._controls = await this._zxingReader.decodeFromVideoDevice(
+        undefined, // use default camera (rear on phones)
+        videoElement,
+        (result, error, controls) => {
+          if (!this._scanning) {
+            controls.stop();
+            return;
+          }
+          if (result) {
+            const isbn = result.getText();
+            if (this._isValidISBN(isbn)) {
+              this._vibrate();
+              this._scanning = false;
+              controls.stop();
+              onDetected(isbn);
+            }
+          }
+          // error is normal when no barcode in frame — just keep scanning
+        }
+      );
+    } catch (err) {
+      // If zxing's camera access fails, try manual stream approach
+      console.warn('zxing camera failed, trying manual stream:', err.message);
+      await this._manualScan(videoElement, onDetected);
     }
   },
 
   stopScanner() {
     this._scanning = false;
-    if (this._animFrame) {
-      cancelAnimationFrame(this._animFrame);
-      this._animFrame = null;
+    if (this._controls) {
+      try { this._controls.stop(); } catch {}
+      this._controls = null;
     }
     if (this._stream) {
       this._stream.getTracks().forEach(t => t.stop());
@@ -42,32 +55,17 @@ const Scanner = {
     }
   },
 
-  async _scanWithNative(video, onDetected) {
-    if (!this._scanning) return;
-
-    try {
-      const barcodes = await this._detector.detect(video);
-      if (barcodes.length > 0) {
-        const isbn = barcodes[0].rawValue;
-        if (this._isValidISBN(isbn)) {
-          this._vibrate();
-          onDetected(isbn);
-          return; // Stop scanning after detection
-        }
-      }
-    } catch {
-      // Detection failed this frame, try again
-    }
-
-    this._animFrame = requestAnimationFrame(() => {
-      this._scanWithNative(video, onDetected);
-    });
-  },
-
   async _loadZxing() {
     if (this._zxingReader) return;
 
     return new Promise((resolve, reject) => {
+      // Check if already loaded
+      if (typeof ZXing !== 'undefined') {
+        this._zxingReader = new ZXing.BrowserMultiFormatReader();
+        resolve();
+        return;
+      }
+
       const script = document.createElement('script');
       script.src = 'lib/zxing-browser.min.js';
       script.onload = () => {
@@ -79,38 +77,59 @@ const Scanner = {
     });
   },
 
-  _scanWithZxing(video, onDetected) {
-    if (!this._scanning || !this._zxingReader) return;
+  // Fallback: manual camera stream + canvas-based frame decoding
+  async _manualScan(videoElement, onDetected) {
+    this._stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      }
+    });
+    videoElement.srcObject = this._stream;
+    await videoElement.play();
 
-    // ZXing's BrowserMultiFormatReader can decode directly from a video element
-    // We poll frames using a canvas since we manage the stream ourselves
     const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
     const scan = () => {
       if (!this._scanning) return;
-
-      if (video.videoWidth === 0) {
-        this._animFrame = requestAnimationFrame(scan);
+      if (videoElement.videoWidth === 0) {
+        requestAnimationFrame(scan);
         return;
       }
 
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
+      canvas.width = videoElement.videoWidth;
+      canvas.height = videoElement.videoHeight;
+      ctx.drawImage(videoElement, 0, 0);
 
       try {
-        const result = this._zxingReader.decodeFromCanvas(canvas);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const luminances = new ZXing.RGBLuminanceSource(imageData.data, canvas.width, canvas.height);
+        const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(luminances));
+
+        const hints = new Map();
+        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+          ZXing.BarcodeFormat.EAN_13,
+          ZXing.BarcodeFormat.EAN_8
+        ]);
+        hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+
+        const reader = new ZXing.MultiFormatReader();
+        reader.setHints(hints);
+        const result = reader.decode(bitmap);
+
         if (result && this._isValidISBN(result.getText())) {
           this._vibrate();
+          this._scanning = false;
           onDetected(result.getText());
           return;
         }
       } catch {
-        // No barcode found this frame
+        // No barcode in this frame — keep scanning
       }
 
-      this._animFrame = requestAnimationFrame(scan);
+      requestAnimationFrame(scan);
     };
 
     scan();
