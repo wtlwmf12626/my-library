@@ -137,7 +137,8 @@ const Sheets = {
       'Page Count': 'pageCount',
       'Cover Image URL': 'coverUrl',
       'Description': 'description',
-      'Read Status': 'readStatus',
+      'Rachel Status': 'rachelStatus',
+      'Mason Status': 'masonStatus',
       'Date Added': 'dateAdded',
       'Lent To': 'lentTo',
       'Lent Date': 'lentDate'

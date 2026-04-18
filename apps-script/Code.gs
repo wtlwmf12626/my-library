@@ -61,7 +61,8 @@ function addBook(sheet, book) {
     book.pageCount || '',
     book.coverUrl || '',
     book.description || '',
-    book.readStatus || 'To Read',
+    book.rachelStatus || 'To Read',
+    book.masonStatus || 'To Read',
     new Date().toISOString().split('T')[0],  // dateAdded
     book.lentTo || '',
     book.lentDate || ''
@@ -79,7 +80,8 @@ function updateBook(sheet, book) {
     if (String(data[i][isbnCol - 1]) === String(book.isbn)) {
       const rowNum = i + 1;
       // Update mutable fields only
-      if (book.readStatus !== undefined) sheet.getRange(rowNum, getColumnIndex(sheet, 'Read Status')).setValue(book.readStatus);
+      if (book.rachelStatus !== undefined) sheet.getRange(rowNum, getColumnIndex(sheet, 'Rachel Status')).setValue(book.rachelStatus);
+      if (book.masonStatus !== undefined) sheet.getRange(rowNum, getColumnIndex(sheet, 'Mason Status')).setValue(book.masonStatus);
       if (book.lentTo !== undefined) sheet.getRange(rowNum, getColumnIndex(sheet, 'Lent To')).setValue(book.lentTo);
       if (book.lentDate !== undefined) sheet.getRange(rowNum, getColumnIndex(sheet, 'Lent Date')).setValue(book.lentDate);
       return jsonResponse({ success: true, message: 'Book updated' });

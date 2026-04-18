@@ -43,10 +43,20 @@ const UI = {
       cover.appendChild(placeholder);
     }
 
-    const statusBadge = document.createElement('span');
-    statusBadge.className = 'status-badge ' + (book.readStatus === 'Read' ? 'status-read' : 'status-to-read');
-    statusBadge.textContent = book.readStatus || 'To Read';
-    cover.appendChild(statusBadge);
+    const badgeGroup = document.createElement('div');
+    badgeGroup.className = 'status-badge-group';
+
+    const rachelBadge = document.createElement('span');
+    rachelBadge.className = 'status-badge ' + (book.rachelStatus === 'Read' ? 'status-rachel-read' : 'status-rachel-to-read');
+    rachelBadge.textContent = 'R: ' + (book.rachelStatus || 'To Read');
+    badgeGroup.appendChild(rachelBadge);
+
+    const masonBadge = document.createElement('span');
+    masonBadge.className = 'status-badge ' + (book.masonStatus === 'Read' ? 'status-mason-read' : 'status-mason-to-read');
+    masonBadge.textContent = 'M: ' + (book.masonStatus || 'To Read');
+    badgeGroup.appendChild(masonBadge);
+
+    cover.appendChild(badgeGroup);
 
     if (book.lentTo) {
       const lentBadge = document.createElement('span');
@@ -130,7 +140,8 @@ const UI = {
       { label: 'Edition', value: book.edition },
       { label: 'Pages', value: book.pageCount },
       { label: 'ISBN', value: book.isbn },
-      { label: 'Status', value: book.readStatus || 'To Read' }
+      { label: 'Rachel', value: book.rachelStatus || 'To Read' },
+      { label: 'Mason', value: book.masonStatus || 'To Read' }
     ];
 
     metaFields.forEach(({ label, value }) => {
@@ -245,42 +256,85 @@ const UI = {
       infoDiv.appendChild(dateP);
     }
 
-    // Read status toggle
-    const toggleDiv = document.createElement('div');
-    toggleDiv.className = 'read-toggle';
+    // Rachel's read status toggle
+    const rachelGroup = document.createElement('div');
+    rachelGroup.className = 'read-toggle-group';
+    const rachelLabel = document.createElement('p');
+    rachelLabel.className = 'read-toggle-label';
+    rachelLabel.textContent = 'Rachel';
+    rachelGroup.appendChild(rachelLabel);
+    const rachelToggle = document.createElement('div');
+    rachelToggle.className = 'read-toggle';
 
-    const btnToRead = document.createElement('button');
-    btnToRead.className = 'btn toggle-btn active';
-    btnToRead.textContent = 'To Read';
+    const rachelBtnToRead = document.createElement('button');
+    rachelBtnToRead.className = 'btn toggle-btn toggle-rachel active';
+    rachelBtnToRead.textContent = 'To Read';
 
-    const btnRead = document.createElement('button');
-    btnRead.className = 'btn toggle-btn';
-    btnRead.textContent = 'Read';
+    const rachelBtnRead = document.createElement('button');
+    rachelBtnRead.className = 'btn toggle-btn toggle-rachel';
+    rachelBtnRead.textContent = 'Read';
 
-    let readStatus = 'To Read';
+    let rachelStatus = 'To Read';
 
-    btnToRead.onclick = () => {
-      readStatus = 'To Read';
-      btnToRead.classList.add('active');
-      btnRead.classList.remove('active');
+    rachelBtnToRead.onclick = () => {
+      rachelStatus = 'To Read';
+      rachelBtnToRead.classList.add('active');
+      rachelBtnRead.classList.remove('active');
+    };
+    rachelBtnRead.onclick = () => {
+      rachelStatus = 'Read';
+      rachelBtnRead.classList.add('active');
+      rachelBtnToRead.classList.remove('active');
     };
 
-    btnRead.onclick = () => {
-      readStatus = 'Read';
-      btnRead.classList.add('active');
-      btnToRead.classList.remove('active');
+    rachelToggle.appendChild(rachelBtnToRead);
+    rachelToggle.appendChild(rachelBtnRead);
+    rachelGroup.appendChild(rachelToggle);
+    infoDiv.appendChild(rachelGroup);
+
+    // Mason's read status toggle
+    const masonGroup = document.createElement('div');
+    masonGroup.className = 'read-toggle-group';
+    const masonLabel = document.createElement('p');
+    masonLabel.className = 'read-toggle-label';
+    masonLabel.textContent = 'Mason';
+    masonGroup.appendChild(masonLabel);
+    const masonToggle = document.createElement('div');
+    masonToggle.className = 'read-toggle';
+
+    const masonBtnToRead = document.createElement('button');
+    masonBtnToRead.className = 'btn toggle-btn toggle-mason active';
+    masonBtnToRead.textContent = 'To Read';
+
+    const masonBtnRead = document.createElement('button');
+    masonBtnRead.className = 'btn toggle-btn toggle-mason';
+    masonBtnRead.textContent = 'Read';
+
+    let masonStatus = 'To Read';
+
+    masonBtnToRead.onclick = () => {
+      masonStatus = 'To Read';
+      masonBtnToRead.classList.add('active');
+      masonBtnRead.classList.remove('active');
+    };
+    masonBtnRead.onclick = () => {
+      masonStatus = 'Read';
+      masonBtnRead.classList.add('active');
+      masonBtnToRead.classList.remove('active');
     };
 
-    toggleDiv.appendChild(btnToRead);
-    toggleDiv.appendChild(btnRead);
-    infoDiv.appendChild(toggleDiv);
+    masonToggle.appendChild(masonBtnToRead);
+    masonToggle.appendChild(masonBtnRead);
+    masonGroup.appendChild(masonToggle);
+    infoDiv.appendChild(masonGroup);
 
     // Add button
     const addBtn = document.createElement('button');
     addBtn.className = 'btn btn-primary';
     addBtn.textContent = 'Add to Library';
     addBtn.onclick = () => {
-      book.readStatus = readStatus;
+      book.rachelStatus = rachelStatus;
+      book.masonStatus = masonStatus;
       onConfirm(book);
     };
     infoDiv.appendChild(addBtn);
@@ -323,23 +377,35 @@ const UI = {
     const form = document.createElement('div');
     form.className = 'edit-form';
 
-    // Status select
-    const statusLabel = document.createElement('label');
-    statusLabel.textContent = 'Read Status';
-    const statusSelect = document.createElement('select');
-    statusSelect.id = 'edit-status';
-    const optToRead = document.createElement('option');
-    optToRead.value = 'To Read';
-    optToRead.textContent = 'To Read';
-    optToRead.selected = book.readStatus !== 'Read';
-    const optRead = document.createElement('option');
-    optRead.value = 'Read';
-    optRead.textContent = 'Read';
-    optRead.selected = book.readStatus === 'Read';
-    statusSelect.appendChild(optToRead);
-    statusSelect.appendChild(optRead);
-    statusLabel.appendChild(statusSelect);
-    form.appendChild(statusLabel);
+    // Rachel status select
+    const rachelStatusLabel = document.createElement('label');
+    rachelStatusLabel.textContent = "Rachel's Status";
+    const rachelStatusSelect = document.createElement('select');
+    rachelStatusSelect.id = 'edit-rachel-status';
+    ['To Read', 'Read'].forEach(val => {
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = val;
+      opt.selected = (book.rachelStatus || 'To Read') === val;
+      rachelStatusSelect.appendChild(opt);
+    });
+    rachelStatusLabel.appendChild(rachelStatusSelect);
+    form.appendChild(rachelStatusLabel);
+
+    // Mason status select
+    const masonStatusLabel = document.createElement('label');
+    masonStatusLabel.textContent = "Mason's Status";
+    const masonStatusSelect = document.createElement('select');
+    masonStatusSelect.id = 'edit-mason-status';
+    ['To Read', 'Read'].forEach(val => {
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = val;
+      opt.selected = (book.masonStatus || 'To Read') === val;
+      masonStatusSelect.appendChild(opt);
+    });
+    masonStatusLabel.appendChild(masonStatusSelect);
+    form.appendChild(masonStatusLabel);
 
     // Lent To
     const lentLabel = document.createElement('label');
@@ -369,7 +435,8 @@ const UI = {
     saveBtn.onclick = () => {
       const updated = {
         isbn: book.isbn,
-        readStatus: statusSelect.value,
+        rachelStatus: rachelStatusSelect.value,
+        masonStatus: masonStatusSelect.value,
         lentTo: lentInput.value,
         lentDate: dateInput.value
       };

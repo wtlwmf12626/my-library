@@ -182,8 +182,12 @@ const App = {
         if (!searchable.includes(searchTerm)) return false;
       }
 
-      // Status
-      if (statusFilter && book.readStatus !== statusFilter) return false;
+      // Status (format: "rachel:Read", "mason:To Read", or empty for all)
+      if (statusFilter) {
+        const [person, status] = statusFilter.split(':');
+        if (person === 'rachel' && (book.rachelStatus || 'To Read') !== status) return false;
+        if (person === 'mason' && (book.masonStatus || 'To Read') !== status) return false;
+      }
 
       // Genre
       if (genreFilter && (!book.genre || !book.genre.includes(genreFilter))) return false;

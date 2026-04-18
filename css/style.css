@@ -255,6 +255,39 @@ h1, h2, h3 {
   color: #fff;
 }
 
+/* Per-user status badges */
+.status-badge-group {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-end;
+}
+
+.status-rachel-read {
+  background: #c4873b;
+  color: #fff;
+}
+
+.status-rachel-to-read {
+  background: rgba(250, 246, 240, 0.9);
+  color: #c4873b;
+  border: 1px solid #c4873b;
+}
+
+.status-mason-read {
+  background: #4a8c8a;
+  color: #fff;
+}
+
+.status-mason-to-read {
+  background: rgba(250, 246, 240, 0.9);
+  color: #4a8c8a;
+  border: 1px solid #4a8c8a;
+}
+
 .lent-badge {
   position: absolute;
   bottom: 8px;
@@ -543,10 +576,20 @@ h1, h2, h3 {
 
 /* -- Read Toggle -- */
 
+.read-toggle-group {
+  margin: 0.75rem 0 0;
+}
+
+.read-toggle-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #5c4f3f;
+  margin-bottom: 0.3rem;
+}
+
 .read-toggle {
   display: flex;
   gap: 0.5rem;
-  margin: 1rem 0;
 }
 
 .toggle-btn {
@@ -556,8 +599,13 @@ h1, h2, h3 {
   text-align: center;
 }
 
-.toggle-btn.active {
+.toggle-rachel.active {
   background: #c4873b;
+  color: #fff;
+}
+
+.toggle-mason.active {
+  background: #4a8c8a;
   color: #fff;
 }
 
