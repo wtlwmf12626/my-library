@@ -71,17 +71,18 @@ const Sheets = {
   },
 
   _parseCSV(csv) {
-    const lines = csv.split('\n');
-    if (lines.length < 2) return [];
+    // Single-pass parser: respects quoted fields that contain commas or newlines
+    const rows = this._parseCSVRows(csv);
+    if (rows.length < 2) return [];
 
-    const headers = this._parseCSVLine(lines[0]);
+    const headers = rows[0];
     const books = [];
 
-    for (let i = 1; i < lines.length; i++) {
-      if (!lines[i].trim()) continue;
-      const values = this._parseCSVLine(lines[i]);
-      const book = {};
+    for (let i = 1; i < rows.length; i++) {
+      const values = rows[i];
+      if (!values.some(v => v.trim())) continue;
 
+      const book = {};
       headers.forEach((header, idx) => {
         const key = this._headerToKey(header);
         book[key] = values[idx] || '';
@@ -95,35 +96,60 @@ const Sheets = {
     return books;
   },
 
-  _parseCSVLine(line) {
-    const values = [];
-    let current = '';
+  _parseCSVRows(csv) {
+    // State-machine CSV parser — handles newlines and commas inside quoted fields
+    const rows = [];
+    let row = [];
+    let field = '';
     let inQuotes = false;
+    let i = 0;
 
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
+    while (i < csv.length) {
+      const ch = csv[i];
+
       if (inQuotes) {
-        if (ch === '"' && line[i + 1] === '"') {
-          current += '"';
-          i++;
+        if (ch === '"' && csv[i + 1] === '"') {
+          field += '"';   // escaped quote ""
+          i += 2;
         } else if (ch === '"') {
           inQuotes = false;
+          i++;
         } else {
-          current += ch;
+          field += ch;    // newlines inside quotes are kept as part of the field
+          i++;
         }
       } else {
         if (ch === '"') {
           inQuotes = true;
+          i++;
         } else if (ch === ',') {
-          values.push(current.trim());
-          current = '';
+          row.push(field.trim());
+          field = '';
+          i++;
+        } else if (ch === '\r' && csv[i + 1] === '\n') {
+          row.push(field.trim());
+          field = '';
+          rows.push(row);
+          row = [];
+          i += 2;
+        } else if (ch === '\n') {
+          row.push(field.trim());
+          field = '';
+          rows.push(row);
+          row = [];
+          i++;
         } else {
-          current += ch;
+          field += ch;
+          i++;
         }
       }
     }
-    values.push(current.trim());
-    return values;
+
+    // Flush the last field/row
+    row.push(field.trim());
+    if (row.some(v => v)) rows.push(row);
+
+    return rows;
   },
 
   _headerToKey(header) {
